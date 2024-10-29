@@ -2,7 +2,7 @@
 
 # Cek apakah file binary sudah didownload
 if [ ! -f nichash ]; then
-  echo "Binary file not found! Please download the go-hash-cli binary first."
+  echo "Binary file not found! Please download the nichash binary first."
   exit 1
 fi
 
