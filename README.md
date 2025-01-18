@@ -1,9 +1,9 @@
-# nichash v1.0.2
+# nichash v2.4.0
 
-nichash is a command-line tool designed for generating SHA-256 hash values for files. It’s a quick and efficient solution for checking file integrity and verifying that files remain unchanged. With support for Linux, nichash provides an easy-to-use hashing solution.
+nichash is a command-line tool designed for generating hash values for files. It’s a quick and efficient solution for checking file integrity and verifying that files remain unchanged. With support for Linux, nichash provides an easy-to-use hashing solution.
 
 ## Features
-- **SHA-256 Hash Generation**: Securely hashes files using the SHA-256 algorithm.
+- **Hash Generation**: Securely hashes files using the sha256, sha512, sha1, md5, sha3-256 algorithm.
 - **Simple CLI Usage**: Minimal arguments required for quick hash generation.
 
 ## Installation
