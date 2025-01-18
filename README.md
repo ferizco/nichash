@@ -3,14 +3,28 @@
 nichash is a command-line tool designed for generating hash values for files. It’s a quick and efficient solution for checking file integrity and verifying that files remain unchanged. With support for Linux, nichash provides an easy-to-use hashing solution.
 
 ## Features
-- **Hash Generation**: Securely hashes files using the sha256, sha512, sha1, md5, sha3-256 algorithm.
-- **Simple CLI Usage**: Minimal arguments required for quick hash generation.
+#### Hash Generation: Securely generates file hashes using various algorithms, including:
+- SHA256, SHA512, SHA1, MD5, and SHA3-256 for flexible security and compatibility.
+#### Batch Hashing: Process multiple files recursively in a folder, making it easy to hash entire directories at once.
+#### Customizable Output Formats: Save hash results in your preferred format:
+- TXT: Human-readable text format.
+- CSV: Structured tabular format for data analysis.
+- JSON: Ideal for integration with other tools or applications.
+#### Verification Mode: Check file integrity by comparing calculated hashes against expected values.
+#### User-Friendly CLI:
+- Minimal arguments required for quick hash generation.
+- Displays clear messages for errors, process updates, and results.
+
+## Different than Others
+- Supports SHA3-256 Algorithm: Offering cutting-edge hashing technology beyond standard algorithms.
+- Batch File Hashing: Process multiple files in a folder effortlessly.
+- Flexible Output Formats: Save results in TXT, CSV, or JSON formats to suit your needs.
 
 ## Installation
-Download the appropriate binary for your operating system from the [Releases](https://github.com/ferizco/Nichash/releases) page.
+Download the appropriate binary for your Linux AMD64 operating system from the [Releases](https://github.com/ferizco/Nichash/releases) page.
 
 ### For Linux
-1. Download `nichash-linux` from the latest release. (You can use wget https://github.com/ferizco/nichash/archive/refs/tags/nichash-v2.4.0.zip)
+1. Download `nichash` from the latest release. (You can use wget https://github.com/ferizco/nichash/archive/refs/tags/nichash-v2.4.0.zip)
 2. Then unzip the file. 
 3. Make the installer executable:
    ```bash
