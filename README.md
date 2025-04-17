@@ -24,7 +24,7 @@ nichash is a command-line tool designed for generating hash values for files. It
 Download the appropriate binary for your Linux AMD64 operating system from the [Releases](https://github.com/ferizco/Nichash/releases) page.
 
 ### For Linux
-1. Download `nichash` from the latest release. (You can use wget https://github.com/ferizco/nichash/archive/refs/tags/nichash-v2.4.0.zip)
+1. Download `nichash` from the latest release. (you can use wget)
 2. Then unzip the file. 
 3. Make the installer executable:
    ```bash
