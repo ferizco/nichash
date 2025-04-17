@@ -19,7 +19,7 @@ import (
 	"golang.org/x/crypto/sha3" // Install dengan: go get golang.org/x/crypto/sha3
 )
 
-const version = "2.4.0"
+const version = "2.4.1"
 
 // HashResult represents the hash result for a file
 type HashResult struct {
