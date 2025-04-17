@@ -1,4 +1,4 @@
-# nichash v2.4.0
+# nichash v2.4.1
 
 nichash is a command-line tool designed for generating hash values for files. It’s a quick and efficient solution for checking file integrity and verifying that files remain unchanged. With support for Linux, nichash provides an easy-to-use hashing solution.
 
