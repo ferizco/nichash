@@ -16,12 +16,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"golang.org/x/crypto/sha3" // Install dengan: go get golang.org/x/crypto/sha3
+	"golang.org/x/crypto/sha3"
 )
 
-const version = "2.4.1"
+const version = "2.5.0"
 
-// HashResult represents the hash result for a file
 type HashResult struct {
 	FilePath string `json:"file_path"`
 	HashType string `json:"hash_type"`
@@ -29,38 +28,38 @@ type HashResult struct {
 }
 
 func main() {
+	fs := flag.NewFlagSet("nichash", flag.ContinueOnError)
+	fs.SetOutput(io.Discard) // menutup output default Go
+
 	// Define flags
-	filePath := flag.String("file", "", "Path of the file to generate hash")
-	dirPath := flag.String("dir", "", "Path of the directory to hash files recursively")
-	hashType := flag.String("h", "sha256", "Hash type: sha256, sha512, sha1, md5, sha3-256")
-	outputFile := flag.String("o", "", "Output file (supports .txt, .json, .csv)")
-	verifyHash := flag.String("verify", "", "Hash to verify against the file")
-	showVersion := flag.Bool("version", false, "Show the version of the application")
+	filePath := fs.String("file", "", "Path of the file to generate hash")
+	dirPath := fs.String("dir", "", "Path of the directory to hash files recursively")
+	hashType := fs.String("hash", "sha256", "Hash type: sha256, sha512, sha1, md5, sha3-256 (default sha256)")
+	outputFile := fs.String("o", "", " Output file (supports .txt, .json, .csv)")
+	verifyHash := fs.String("verify", "", "Hash to verify against the file")
+	showVersion := fs.Bool("version", false, "Show the version of the application")
 
-	// Redefine default Usage function
-	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, `Nichash - A flexible file hash generator
-Version: %s
-Author: Ferizco
+	if len(os.Args) == 1 {
+		printUsage(fs)
+		os.Exit(0)
+	}
 
-Usage:
-  nichash [options]
-
-Options:
-`, version)
-		flag.PrintDefaults()
-		fmt.Fprintln(os.Stderr, `
-Examples:
-  nichash -file test.txt -h sha256 -o hash.txt    Generate SHA-256 hash for test.txt and save to hash.txt
-  nichash -file test.txt -h sha256 -verify e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-  nichash -dir ./myfolder -h sha512 -o hash.json Generate SHA-512 hash for all files in ./myfolder recursively and save to hash.json
-  nichash -version                               Display the application version`)
+	// Manual help handler
+	for _, arg := range os.Args[1:] {
+		if arg == "-help" || arg == "--help" {
+			printUsage(fs)
+			os.Exit(0)
+		}
 	}
 
 	// Parse flags
-	flag.Parse()
+	if err := fs.Parse(os.Args[1:]); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		fmt.Fprintln(os.Stderr, "Run 'nichash -help' for usage.")
+		os.Exit(1)
+	}
 
-	// Handle -version flag
+	// Show version
 	if *showVersion {
 		fmt.Printf("Nichash version: %s\n", version)
 		return
@@ -73,50 +72,69 @@ Examples:
 		if ext == ".json" || ext == ".csv" || ext == ".txt" {
 			outputFormat = strings.TrimPrefix(ext, ".")
 		} else {
-			fmt.Fprintln(os.Stderr, "Error: Unsupported output file format. Use .txt, .json, or .csv.")
+			fmt.Fprintln(os.Stderr, "Error: Output format not supported. Please use .txt, .json, or .csv.")
 			return
 		}
 	}
 
-	// Handle -verify flag
+	// Validasi awal hash type sebelum proses file/directory
+	if _, err := getHasher(*hashType); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		fmt.Fprintln(os.Stderr, "Run 'nichash -help' for usage.")
+		os.Exit(1)
+	}
+
+	// -verify hanya untuk -file
+	if *verifyHash != "" && *filePath == "" {
+		fmt.Fprintln(os.Stderr, "Error: The -verify flag can only be used with -file, not with -dir.")
+		fmt.Fprintln(os.Stderr, "Run 'nichash -help' for usage.")
+		os.Exit(1)
+	}
+
+	// Verify hash
 	if *filePath != "" && *verifyHash != "" {
 		if err := verifyFileHash(*filePath, *hashType, *verifyHash); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		} else {
-			fmt.Printf("File %s: Hash matches!\n", *filePath)
+			fmt.Printf("File %s: hash matches!\n", *filePath)
 		}
 		return
 	}
 
-	// Prepare to store results
 	var results []HashResult
+	hadError := false
 
-	// Handle -file flag
 	if *filePath != "" {
-		if result, err := generateFileHash(*filePath, *hashType); err != nil {
+		result, err := generateFileHash(*filePath, *hashType)
+		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			hadError = true
 		} else {
 			results = append(results, result)
 		}
 	}
 
-	// Handle -dir flag
 	if *dirPath != "" {
-		if dirResults, err := generateDirHash(*dirPath, *hashType); err != nil {
+		dirResults, err := generateDirHash(*dirPath, *hashType)
+		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			hadError = true
 		} else {
 			results = append(results, dirResults...)
 		}
 	}
 
-	// If neither -file nor -dir is provided
-	if len(results) == 0 {
-		fmt.Fprintln(os.Stderr, "Error: Please provide a file path (-file) or directory path (-dir).")
-		flag.Usage()
+	if hadError {
+		fmt.Fprintln(os.Stderr, "Run 'nichash -help' for usage.")
 		return
 	}
 
-	// Output results to file or stdout
+	if len(results) == 0 {
+		fmt.Fprintln(os.Stderr, "Error: Please provide a file path (-file) or directory path (-dir).")
+		fmt.Fprintln(os.Stderr, "Run 'nichash -help' for usage.")
+		return
+	}
+
 	if *outputFile != "" {
 		if err := saveResultsToFile(results, *outputFile, outputFormat); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
@@ -128,7 +146,39 @@ Examples:
 	}
 }
 
-// generateFileHash calculates and returns the hash of a single file
+// ======================
+// Fungsi Pendukung
+// ======================
+
+const banner = `
+ _   _ _      _               _     
+| \ | (_)    | |             | |    
+|  \| |_  ___| |__   __ _ ___| |__  
+| . ` + "`" + ` | |/ __| '_ \ / _` + "`" + ` / __| '_ \ 
+| |\  | | (__| | | | (_| \__ \ | | |
+|_| \_|_|\___|_| |_|\__,_|___/_| |_|
+`
+
+func printUsage(fs *flag.FlagSet) {
+	fmt.Print(banner)
+	fmt.Fprintf(os.Stderr, `Secure, Fast, and Flexible Hash Generator
+Version: %s
+Author: Ferizco
+
+Usage:
+  nichash [options]
+
+Options:
+`, version)
+	fs.SetOutput(os.Stderr)
+	fs.PrintDefaults()
+	fmt.Fprintln(os.Stderr, `
+Examples:
+  nichash -file test.txt -hash sha256 -o hash.txt
+  nichash -dir ./myfolder -hash sha512 -o hash.json
+  nichash -file test.txt -verify <HASH>`)
+}
+
 func generateFileHash(filePath, hashType string) (HashResult, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -149,15 +199,22 @@ func generateFileHash(filePath, hashType string) (HashResult, error) {
 	return HashResult{FilePath: filePath, HashType: strings.ToUpper(hashType), Hash: hashString}, nil
 }
 
-// generateDirHash calculates and returns the hash of all files in a directory recursively
 func generateDirHash(dirPath, hashType string) ([]HashResult, error) {
 	var results []HashResult
+	var hadError bool
 
-	err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
+	info, err := os.Stat(dirPath)
+	if err != nil {
+		return nil, fmt.Errorf("directory not found: %s", dirPath)
+	}
+	if !info.IsDir() {
+		return nil, fmt.Errorf("path is not a directory: %s", dirPath)
+	}
+
+	err = filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return fmt.Errorf("error accessing path %s: %w", path, err)
+			return fmt.Errorf("cannot access path %s: %w", path, err)
 		}
-
 		if info.IsDir() {
 			return nil
 		}
@@ -165,6 +222,7 @@ func generateDirHash(dirPath, hashType string) ([]HashResult, error) {
 		result, err := generateFileHash(path, hashType)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error hashing file %s: %v\n", path, err)
+			hadError = true
 		} else {
 			results = append(results, result)
 		}
@@ -172,30 +230,29 @@ func generateDirHash(dirPath, hashType string) ([]HashResult, error) {
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("error walking directory %s: %w", dirPath, err)
+		return nil, fmt.Errorf("failed to walk directory %s: %w", dirPath, err)
+	}
+
+	if len(results) == 0 && hadError {
+		return nil, fmt.Errorf("no files were successfully processed")
 	}
 
 	return results, nil
 }
 
-// verifyFileHash verifies the hash of a single file against the expected hash
 func verifyFileHash(filePath, hashType, expectedHash string) error {
 	result, err := generateFileHash(filePath, hashType)
 	if err != nil {
 		return err
 	}
-
 	if !strings.EqualFold(result.Hash, expectedHash) {
-		return fmt.Errorf("hash does not match. Expected: %s, Found: %s", expectedHash, result.Hash)
+		return fmt.Errorf("hash does not match. Expected: %s, Result: %s", expectedHash, result.Hash)
 	}
-
 	return nil
 }
 
-// getHasher returns the hash function based on the hash type
 func getHasher(hashType string) (hash.Hash, error) {
-	hashType = strings.ToLower(hashType)
-	switch hashType {
+	switch strings.ToLower(hashType) {
 	case "sha256":
 		return sha256.New(), nil
 	case "sha512":
@@ -211,7 +268,6 @@ func getHasher(hashType string) (hash.Hash, error) {
 	}
 }
 
-// saveResultsToFile saves the hash results to a file in the specified format
 func saveResultsToFile(results []HashResult, outputFile, format string) error {
 	file, err := os.Create(outputFile)
 	if err != nil {
@@ -224,30 +280,21 @@ func saveResultsToFile(results []HashResult, outputFile, format string) error {
 		encoder := json.NewEncoder(file)
 		encoder.SetIndent("", "  ")
 		if err := encoder.Encode(results); err != nil {
-			return fmt.Errorf("failed to write JSON output: %w", err)
+			return fmt.Errorf("failed to write JSON file: %w", err)
 		}
 	case "csv":
 		writer := csv.NewWriter(file)
 		defer writer.Flush()
-		// Write header
-		if err := writer.Write([]string{"File Path", "Hash Type", "Hash"}); err != nil {
-			return fmt.Errorf("failed to write CSV header: %w", err)
-		}
-		// Write records
+		writer.Write([]string{"File Path", "Hash Type", "Hash"})
 		for _, result := range results {
-			if err := writer.Write([]string{result.FilePath, result.HashType, result.Hash}); err != nil {
-				return fmt.Errorf("failed to write CSV record: %w", err)
-			}
+			writer.Write([]string{result.FilePath, result.HashType, result.Hash})
 		}
 	case "txt":
 		for _, result := range results {
-			if _, err := fmt.Fprintf(file, "%s hash of file %s: %s\n", result.HashType, result.FilePath, result.Hash); err != nil {
-				return fmt.Errorf("failed to write TXT output: %w", err)
-			}
+			fmt.Fprintf(file, "%s hash of file %s: %s\n", result.HashType, result.FilePath, result.Hash)
 		}
 	default:
-		return fmt.Errorf("unsupported format: %s", format)
+		return fmt.Errorf("unrecognized format: %s", format)
 	}
-
 	return nil
 }

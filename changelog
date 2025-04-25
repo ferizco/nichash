@@ -1,0 +1,25 @@
+# Changelog
+
+Semua perubahan penting pada proyek ini akan didokumentasikan dalam berkas ini.
+
+## [2.5.0] - 22 April 2025
+
+### Add
+- Penerapan `FlagSet` khusus untuk mengontrol penuh parsing CLI dan penanganan error.
+- Deteksi manual terhadap flag `-help` / `--help` untuk menampilkan bantuan secara eksplisit dan clean.
+- Validasi awal untuk tipe hash (`-hash`) sebelum proses file atau direktori dimulai.
+- Validasi bahwa flag `-verify` hanya bisa digunakan bersama `-file`, bukan `-dir`.
+- Penambahan banner nichash menggunakan ASCII
+
+### Change
+- Peningkatan logika penanganan error pada flag `-file`, `-dir`, dan `-verify`.
+- Perubahan flag `-h` menjadi `hash`. 
+- Bantuan (usage) CLI sekarang hanya muncul jika diminta dengan `-help`.
+- Pesan kesalahan yang lebih jelas saat argumen tidak valid atau hilang.
+- Error karena hash tidak valid sekarang langsung ditampilkan satu kali, tanpa spam untuk setiap file dalam direktori besar.
+
+### Fix
+- Menghentikan keluarnya pesan bantuan secara otomatis saat terjadi error parsing.
+- Memperbaiki duplikasi dan ketidakteraturan dalam tampilan daftar flag CLI.
+- CLI tidak lagi melanjutkan proses hash jika argumen atau konfigurasi tidak valid.
+
