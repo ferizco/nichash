@@ -2,7 +2,7 @@
 
 Semua perubahan penting pada proyek ini akan didokumentasikan dalam berkas ini.
 
-## [2.5.0] - 22 April 2025
+## [2.5.0] - 25 April 2025
 
 ### Add
 - Penerapan `FlagSet` khusus untuk mengontrol penuh parsing CLI dan penanganan error.
