@@ -35,3 +35,19 @@ Download the appropriate binary for your Linux AMD64 operating system from the [
 5. Check help options for use:
    ```bash
    nichash -help
+
+## Usage 
+Basic Usage
+ ```bash
+nichash -file <file_path> -hash <algorithm> 
+nichash -dir <directory_path> -hash <algorithm>
+```
+With the output (TXT, CSV, JSON) 
+ ```bash
+nichash -file <file_path> -hash <algorithm> -o <filename.format>
+nichash -dir <directory_path> -hash <algorithm> -o <filename.format>
+```
+Check the integrity
+```bash
+nichash -file <file_path> -hash <algorithm> -verify <expected_hash>
+```
