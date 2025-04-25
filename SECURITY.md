@@ -38,4 +38,4 @@ Nichash uses standard cryptographic hash algorithms. Always use the strongest su
 
 ## Questions
 
-For any other security-related questions, please use [GitHub Issues](https://github.com/ferizco/Nichash/issues) or [GitHub Discussions](https://github.com/ferizco/Nichash/discussions) if available.
+For any other security-related questions, please use [GitHub Issues](https://github.com/ferizco/Nichash/issues) 
