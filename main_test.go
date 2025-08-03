@@ -7,6 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"nichash/hashutil"
+	"nichash/output"
 )
 
 // Helper: membuat file di direktori sementara
@@ -20,7 +23,6 @@ func createTestFile(t *testing.T, name, content string) string {
 	return filePath
 }
 
-// Helper: membuat file langsung di direktori yang diberikan
 func createTestFileAt(t *testing.T, dir, name, content string) string {
 	t.Helper()
 	filePath := filepath.Join(dir, name)
@@ -32,7 +34,7 @@ func createTestFileAt(t *testing.T, dir, name, content string) string {
 
 func TestGenerateFileHash(t *testing.T) {
 	file := createTestFile(t, "test.txt", "hello world")
-	result, err := generateFileHash(file, "sha256")
+	result, err := hashutil.GenerateFileHash(file, "sha256")
 	if err != nil {
 		t.Fatalf("generateFileHash gagal: %v", err)
 	}
@@ -49,7 +51,7 @@ func TestGenerateDirHash(t *testing.T) {
 	createTestFileAt(t, dir, "a.txt", "data A")
 	createTestFileAt(t, dir, "b.txt", "data B")
 
-	results, err := generateDirHash(dir, "sha1")
+	results, err := hashutil.GenerateDirHash(dir, "sha1")
 	if err != nil {
 		t.Fatalf("generateDirHash gagal: %v", err)
 	}
@@ -61,20 +63,17 @@ func TestGenerateDirHash(t *testing.T) {
 func TestVerifyFileHash(t *testing.T) {
 	file := createTestFile(t, "verify.txt", "verifikasi data")
 
-	// Hitung hash untuk dibandingkan
-	result, err := generateFileHash(file, "sha256")
+	result, err := hashutil.GenerateFileHash(file, "sha256")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Harus cocok
-	err = verifyFileHash(file, "sha256", result.Hash)
+	err = hashutil.VerifyFileHash(file, "sha256", result.Hash)
 	if err != nil {
 		t.Errorf("hash seharusnya cocok, tapi gagal: %v", err)
 	}
 
-	// Harus gagal jika hash salah
-	err = verifyFileHash(file, "sha256", "1234567890abcdef")
+	err = hashutil.VerifyFileHash(file, "sha256", "1234567890abcdef")
 	if err == nil {
 		t.Error("seharusnya gagal jika hash tidak cocok")
 	}
@@ -83,21 +82,20 @@ func TestVerifyFileHash(t *testing.T) {
 func TestGetHasher(t *testing.T) {
 	valid := []string{"sha256", "sha512", "sha1", "md5", "sha3-256"}
 	for _, algo := range valid {
-		_, err := getHasher(algo)
+		_, err := hashutil.GetHasher(algo)
 		if err != nil {
 			t.Errorf("seharusnya mendukung %s, tapi error: %v", algo, err)
 		}
 	}
 
-	// Tes yang tidak didukung
-	_, err := getHasher("unsupported")
+	_, err := hashutil.GetHasher("unsupported")
 	if err == nil || !strings.Contains(err.Error(), "unsupported") {
 		t.Error("seharusnya error untuk hash tidak didukung")
 	}
 }
 
-// Data dummy untuk tes output
-var dummyResults = []HashResult{
+// Dummy data untuk testing output
+var dummyResults = []hashutil.HashResult{
 	{FilePath: "/tmp/test1.txt", HashType: "SHA256", Hash: "abc123"},
 	{FilePath: "/tmp/test2.txt", HashType: "SHA256", Hash: "def456"},
 }
@@ -106,18 +104,17 @@ func TestSaveResultsToFile_JSON(t *testing.T) {
 	tmp := t.TempDir()
 	path := filepath.Join(tmp, "output.json")
 
-	err := saveResultsToFile(dummyResults, path, "json")
+	err := output.SaveResultsToFile(dummyResults, path, "json")
 	if err != nil {
 		t.Fatalf("gagal menyimpan file JSON: %v", err)
 	}
 
-	// Verifikasi konten JSON valid
 	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	var parsed []HashResult
+	var parsed []hashutil.HashResult
 	if err := json.Unmarshal(data, &parsed); err != nil {
 		t.Errorf("file JSON tidak valid: %v", err)
 	}
@@ -131,7 +128,7 @@ func TestSaveResultsToFile_CSV(t *testing.T) {
 	tmp := t.TempDir()
 	path := filepath.Join(tmp, "output.csv")
 
-	err := saveResultsToFile(dummyResults, path, "csv")
+	err := output.SaveResultsToFile(dummyResults, path, "csv")
 	if err != nil {
 		t.Fatalf("gagal menyimpan file CSV: %v", err)
 	}
@@ -142,7 +139,7 @@ func TestSaveResultsToFile_CSV(t *testing.T) {
 	}
 
 	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
-	if len(lines) != len(dummyResults)+1 { // +1 untuk header
+	if len(lines) != len(dummyResults)+1 {
 		t.Errorf("jumlah baris CSV tidak sesuai: %d", len(lines))
 	}
 }
@@ -151,7 +148,7 @@ func TestSaveResultsToFile_TXT(t *testing.T) {
 	tmp := t.TempDir()
 	path := filepath.Join(tmp, "output.txt")
 
-	err := saveResultsToFile(dummyResults, path, "txt")
+	err := output.SaveResultsToFile(dummyResults, path, "txt")
 	if err != nil {
 		t.Fatalf("gagal menyimpan file TXT: %v", err)
 	}

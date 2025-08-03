@@ -23,3 +23,8 @@ Semua perubahan penting pada proyek ini akan didokumentasikan dalam berkas ini.
 - Memperbaiki duplikasi dan ketidakteraturan dalam tampilan daftar flag CLI.
 - CLI tidak lagi melanjutkan proses hash jika argumen atau konfigurasi tidak valid.
 
+## [2.5.1] - 3 Agustus 2025
+
+### Change 
+- refactor dan modular code
+
