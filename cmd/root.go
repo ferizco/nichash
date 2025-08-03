@@ -13,7 +13,7 @@ import (
 	"nichash/output"
 )
 
-const version = "2.5.1"
+const version = "2.5.2"
 
 func Execute() {
 	fs := flag.NewFlagSet("nichash", flag.ContinueOnError)
@@ -92,13 +92,36 @@ func Execute() {
 		}
 	}
 
+	usedStreamingOutput := false
 	if *dirPath != "" {
-		dirResults, err := hashutil.GenerateDirHash(*dirPath, *hashType)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-			hadError = true
+		if *outputFile != "" {
+			dirResults, err := hashutil.GenerateDirHash(*dirPath, *hashType, nil, nil)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				hadError = true
+			} else {
+				results = append(results, dirResults...)
+			}
 		} else {
-			results = append(results, dirResults...)
+			successCount := 0
+			errorCount := 0
+			usedStreamingOutput = true
+
+			_, err := hashutil.GenerateDirHash(*dirPath, *hashType,
+				func(res hashutil.HashResult) {
+					fmt.Printf("%s hash of file %s: %s\n", res.HashType, res.FilePath, res.Hash)
+					successCount++
+				},
+				func(path string, err error) {
+					fmt.Fprintf(os.Stderr, "Gagal hash file %s: %v\n", path, err)
+					errorCount++
+				})
+
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error saat menjelajah direktori: %v\n", err)
+				hadError = true
+			}
+			fmt.Printf("\nSummary: %d berhasil, %d gagal\n", successCount, errorCount)
 		}
 	}
 
@@ -107,8 +130,9 @@ func Execute() {
 		return
 	}
 
-	if len(results) == 0 {
-		fmt.Fprintln(os.Stderr, "Error: No file or directory provided.")
+	if len(results) == 0 && !usedStreamingOutput {
+		fmt.Fprintln(os.Stderr, "Error: Please provide a file path (-file) or directory path (-dir).")
+		fmt.Fprintln(os.Stderr, "Run 'nichash -help' for usage.")
 		return
 	}
 

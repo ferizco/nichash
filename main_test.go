@@ -51,12 +51,25 @@ func TestGenerateDirHash(t *testing.T) {
 	createTestFileAt(t, dir, "a.txt", "data A")
 	createTestFileAt(t, dir, "b.txt", "data B")
 
-	results, err := hashutil.GenerateDirHash(dir, "sha1")
+	var collected []hashutil.HashResult
+
+	results, err := hashutil.GenerateDirHash(dir, "sha1",
+		func(res hashutil.HashResult) {
+			collected = append(collected, res)
+		},
+		func(path string, err error) {
+			t.Errorf("hash gagal untuk file %s: %v", path, err)
+		},
+	)
+
 	if err != nil {
 		t.Fatalf("generateDirHash gagal: %v", err)
 	}
 	if len(results) != 2 {
 		t.Errorf("seharusnya ada 2 hash, dapat %d", len(results))
+	}
+	if len(collected) != 2 {
+		t.Errorf("callback onResult hanya dipanggil %d kali, seharusnya 2", len(collected))
 	}
 }
 

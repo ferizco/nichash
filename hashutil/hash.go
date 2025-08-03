@@ -63,21 +63,32 @@ func GenerateFileHash(filePath, hashType string) (HashResult, error) {
 	}, nil
 }
 
-func GenerateDirHash(dirPath, hashType string) ([]HashResult, error) {
+func GenerateDirHash(dirPath, hashType string, onResult func(HashResult), onError func(string, error)) ([]HashResult, error) {
 	var results []HashResult
+
 	err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return err
+			if onError != nil {
+				onError(path, err)
+			}
+			return nil
 		}
 		if info.IsDir() {
 			return nil
 		}
+
 		result, err := GenerateFileHash(path, hashType)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error hashing file %s: %v\n", path, err)
-		} else {
-			results = append(results, result)
+			if onError != nil {
+				onError(path, err)
+			}
+			return nil
 		}
+
+		if onResult != nil {
+			onResult(result)
+		}
+		results = append(results, result)
 		return nil
 	})
 	return results, err

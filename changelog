@@ -28,3 +28,11 @@ Semua perubahan penting pada proyek ini akan didokumentasikan dalam berkas ini.
 ### Change 
 - refactor dan modular code
 
+## [2.5.2] - 3 Agustus 2025
+
+### Add 
+- menambahkan logic baru untuk fungsi -dir: realtime print untuk cli mode
+
+### Change 
+- mengubah logic test untuk TestGenerateDirHash
+
