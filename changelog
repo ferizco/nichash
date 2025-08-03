@@ -36,3 +36,9 @@ Semua perubahan penting pada proyek ini akan didokumentasikan dalam berkas ini.
 ### Change 
 - mengubah logic test untuk TestGenerateDirHash
 
+## [2.6.0] - 3 Agustus 2025
+
+### Add 
+- Menambahkan fitur bulk verification dengan flag -verify-all 
+- bulk verification support csv, txt dan json format dari output flag -o
+- penambahan unit test untuk function baru

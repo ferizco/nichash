@@ -32,5 +32,6 @@ Options:
 Examples:
   nichash -file test.txt -hash sha256 -o hash.txt
   nichash -dir ./myfolder -hash sha512 -o hash.json
-  nichash -file test.txt -verify <HASH>`)
+  nichash -file test.txt -verify <HASH>
+  nichash -dir ./myfolder -verify-all hash.json`)
 }

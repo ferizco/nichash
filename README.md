@@ -11,6 +11,8 @@ nichash is a command-line tool designed for generating hash values for files. It
 - CSV: Structured tabular format for data analysis.
 - JSON: Ideal for integration with other tools or applications.
 #### Verification Mode: Check file integrity by comparing calculated hashes against expected values.
+#### Bulk Verification Mode: Check the integrity of all files in a directory by comparing their hashes against a reference file generated previously:
+- Supports .json, .csv, and .txt formats exported using the -o flag.
 #### User-Friendly CLI:
 - Minimal arguments required for quick hash generation.
 - Displays clear messages for errors, process updates, and results.
@@ -50,4 +52,9 @@ nichash -dir <directory_path> -hash <algorithm> -o <filename.format>
 Check the integrity
 ```bash
 nichash -file <file_path> -hash <algorithm> -verify <expected_hash>
+```
+
+Batch check the integrity
+```bash
+nichash -dir <directory_path> --verify-all <reference_file>
 ```

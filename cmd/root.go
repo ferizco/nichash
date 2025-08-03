@@ -13,7 +13,7 @@ import (
 	"nichash/output"
 )
 
-const version = "2.5.2"
+const version = "2.6.0"
 
 func Execute() {
 	fs := flag.NewFlagSet("nichash", flag.ContinueOnError)
@@ -24,6 +24,7 @@ func Execute() {
 	hashType := fs.String("hash", "sha256", "Hash type: sha256, sha512, sha1, md5, sha3-256 (default sha256)")
 	outputFile := fs.String("o", "", "Output file (supports .txt, .json, .csv)")
 	verifyHash := fs.String("verify", "", "Hash to verify against the file")
+	verifyAllPath := fs.String("verify-all", "", "Path to file containing reference hashes for verification")
 	showVersion := fs.Bool("version", false, "Show the version of the application")
 
 	if len(os.Args) == 1 {
@@ -93,7 +94,7 @@ func Execute() {
 	}
 
 	usedStreamingOutput := false
-	if *dirPath != "" {
+	if *dirPath != "" && *verifyAllPath == "" {
 		if *outputFile != "" {
 			dirResults, err := hashutil.GenerateDirHash(*dirPath, *hashType, nil, nil)
 			if err != nil {
@@ -121,8 +122,25 @@ func Execute() {
 				fmt.Fprintf(os.Stderr, "Error saat menjelajah direktori: %v\n", err)
 				hadError = true
 			}
-			fmt.Printf("\nSummary: %d berhasil, %d gagal\n", successCount, errorCount)
+			fmt.Printf("\nSummary: %d success, %d failed\n", successCount, errorCount)
 		}
+	}
+
+	if *dirPath != "" && *verifyAllPath != "" {
+		reference, err := hashutil.LoadHashReference(*verifyAllPath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Gagal memuat referensi hash: %v\n", err)
+			os.Exit(1)
+		}
+
+		actual, err := hashutil.GenerateDirHash(*dirPath, *hashType, nil, nil)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Gagal hashing direktori: %v\n", err)
+			os.Exit(1)
+		}
+
+		hashutil.CompareResults(actual, reference)
+		return
 	}
 
 	if hadError {

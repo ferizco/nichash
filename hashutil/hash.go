@@ -104,3 +104,52 @@ func VerifyFileHash(filePath, hashType, expectedHash string) error {
 	}
 	return nil
 }
+
+// CompareResults membandingkan hash hasil saat ini dengan referensi.
+func CompareResults(actual, reference []HashResult) {
+	referenceMap := make(map[string]HashResult)
+	for _, ref := range reference {
+		// Normalisasi path untuk jaga-jaga
+		referenceMap[strings.TrimSpace(ref.FilePath)] = ref
+	}
+
+	matchCount := 0
+	mismatchCount := 0
+	notFoundCount := 0
+
+	var mismatchFiles []string
+	var notFoundFiles []string
+
+	for _, a := range actual {
+		ref, found := referenceMap[strings.TrimSpace(a.FilePath)]
+		if !found {
+			notFoundFiles = append(notFoundFiles, a.FilePath)
+			notFoundCount++
+			continue
+		}
+
+		// Bandingkan hash dengan ignore case
+		if strings.EqualFold(a.Hash, ref.Hash) {
+			matchCount++
+		} else {
+			mismatchFiles = append(mismatchFiles, a.FilePath)
+			mismatchCount++
+		}
+	}
+
+	fmt.Printf("Summary: %d match, %d mismatch, %d not found\n", matchCount, mismatchCount, notFoundCount)
+
+	if mismatchCount > 0 {
+		fmt.Println("\n❌ Mismatch:")
+		for _, path := range mismatchFiles {
+			fmt.Printf("- %s\n", path)
+		}
+	}
+
+	if notFoundCount > 0 {
+		fmt.Println("\n❌ Not found in reference:")
+		for _, path := range notFoundFiles {
+			fmt.Printf("- %s\n", path)
+		}
+	}
+}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -176,5 +177,85 @@ func TestSaveResultsToFile_TXT(t *testing.T) {
 		if !strings.Contains(string(data), expected) {
 			t.Errorf("konten TXT tidak mengandung baris: %s", expected)
 		}
+	}
+}
+
+func TestVerifyAllFromJSON(t *testing.T) {
+	tmp := t.TempDir()
+	createTestFileAt(t, tmp, "a.txt", "data A")
+	createTestFileAt(t, tmp, "b.txt", "data B")
+
+	results, _ := hashutil.GenerateDirHash(tmp, "sha256", nil, nil)
+
+	// Simpan ke JSON
+	refPath := filepath.Join(tmp, "hash.json")
+	saveResultsForVerifyTest(t, results, refPath, "json")
+
+	reference, err := hashutil.LoadHashReference(refPath)
+	if err != nil {
+		t.Fatalf("Gagal load JSON: %v", err)
+	}
+
+	// Tidak error saat dibandingkan
+	hashutil.CompareResults(results, reference)
+}
+
+func TestVerifyAllFromCSV(t *testing.T) {
+	tmp := t.TempDir()
+	createTestFileAt(t, tmp, "a.txt", "data A")
+	createTestFileAt(t, tmp, "b.txt", "data B")
+
+	results, _ := hashutil.GenerateDirHash(tmp, "sha256", nil, nil)
+
+	refPath := filepath.Join(tmp, "hash.csv")
+	saveResultsForVerifyTest(t, results, refPath, "csv")
+
+	reference, err := hashutil.LoadHashReference(refPath)
+	if err != nil {
+		t.Fatalf("Gagal load CSV: %v", err)
+	}
+
+	hashutil.CompareResults(results, reference)
+}
+
+func TestVerifyAllFromTXT(t *testing.T) {
+	tmp := t.TempDir()
+	createTestFileAt(t, tmp, "a.txt", "data A")
+	createTestFileAt(t, tmp, "b.txt", "data B")
+
+	results, _ := hashutil.GenerateDirHash(tmp, "sha256", nil, nil)
+
+	refPath := filepath.Join(tmp, "hash.txt")
+	saveResultsForVerifyTest(t, results, refPath, "txt")
+
+	reference, err := hashutil.LoadHashReference(refPath)
+	if err != nil {
+		t.Fatalf("Gagal load TXT: %v", err)
+	}
+
+	hashutil.CompareResults(results, reference)
+}
+
+func saveResultsForVerifyTest(t *testing.T, results []hashutil.HashResult, path, format string) {
+	t.Helper()
+	switch format {
+	case "json":
+		data, _ := json.MarshalIndent(results, "", "  ")
+		_ = os.WriteFile(path, data, 0644)
+	case "csv":
+		f, _ := os.Create(path)
+		defer f.Close()
+		w := csv.NewWriter(f)
+		w.Write([]string{"File Path", "Hash Type", "Hash"})
+		for _, r := range results {
+			w.Write([]string{r.FilePath, r.HashType, r.Hash})
+		}
+		w.Flush()
+	case "txt":
+		var lines []string
+		for _, r := range results {
+			lines = append(lines, fmt.Sprintf("%s hash of file %s: %s", r.HashType, r.FilePath, r.Hash))
+		}
+		_ = os.WriteFile(path, []byte(strings.Join(lines, "\n")), 0644)
 	}
 }
